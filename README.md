@@ -1,4 +1,4 @@
-# Resume #
+# Resume(FR) #
 
 Ce répertoire permet de rassembler toute les librairie est code du Projet de terminal (Mini-Serre) . 
 Il y a dedans : <br />- Librairie LiquidCristal_I2C que l'on retrouve sur le site www.arduino.cc .
@@ -6,6 +6,15 @@ Il y a dedans : <br />- Librairie LiquidCristal_I2C que l'on retrouve sur le sit
                 <br />- Librairie PID disponible sur le site www.arduino.cc .
                 <br />- Ainsi que le code en lui même nommé DHT11.ino qui lui n'est pas libre de droit et sera sujet a la
                 mention plus bas.
+                
+                
+# Resume (EN)#     
+
+This repository permit to rassembly all of library and code of the terminal project (mini-serre in fr) .
+there are here : <br />-Library LiquidCrystal_I2C that we find at www.arduino.cc
+                 <br />-Library DHT-Unified-Sensor de drrobot that we find at www.arduino.cc .
+                 <br />-Library PID that we find at www.arduino.cc .
+                 <br />-we can also find <strong>my production</strong> named DHT11.ino ...
 
 
 
