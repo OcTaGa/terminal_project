@@ -1,19 +1,20 @@
-#include <PID_v1.h>
+//#include <PID_v1.h>
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
-
+#include <Wire.h>
 
 
 float t=0;
-float RES_M = 0;
-float Adj_res = 0;
+int PWM_A = LOW; // moteur ventilateur
+int PWM_B = LOW; // moteur fenetre
+float temp_min = 0;
+float temp_max = 0;
 float Value_reach = 26;
-
 LiquidCrystal_I2C lcd(0x27,20,4);
 
 void setup() {
-      PID(RES_M, Adj_res, Value_reach,  );
-     lcd.init();
+      //PID(RES_M, Adj_res, Value_reach,  );
+     lcd.begin();
      pinMode(3, OUTPUT);
      lcd.backlight();
      lcd.setCursor(0,0);
@@ -27,16 +28,24 @@ void loop() {
       dht.begin();
       t = dht.readTemperature();
       float h = dht.readHumidity();
-      if (t < 20)  {
+      if (t < temp_min)  {
           pinMode(3, HIGH);
           lcd.setCursor(8, 3);
           lcd.print("heat ON !!");
       }
       else {
           pinMode(3, LOW);
+          pinMode(PWM_A, LOW);
           lcd.setCursor(8, 3);
           lcd.print("heat OFF !!");
         
+      }
+      if (t > temp_max) {
+
+            pinMode(3, LOW);
+            lcd.setCursor(8, 3);
+            pinMode(PWM_A, HIGH);
+            pinMode(PWM_B, HIGH);
       }
       lcd.clear();
       lcd.print("Temp : ");
