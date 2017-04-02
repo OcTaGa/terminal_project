@@ -4,14 +4,11 @@
 #include <Wire.h>
 #include <Keypad.h>
 
-float t=0;
+#define HYSTERESIS  2
+
 int PWM_A = A1; // moteur ventilateur
 int PWM_B = A2; // moteur fenetre
 
-float hysteresis = 2;
-float temp_act = 0;
-char temp_read[2]={0,0};
-int temp_cons;
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -21,8 +18,8 @@ char keys[ROWS][COLS]  = {
       {'7','8','9'},
       {'*','0','#'}
 };
-byte rowPins[ROWS] = {4, 5, 6, 7};
-byte colPins[COLS] = {8, 9, 10};
+byte rowPins[ROWS] = {6, 5, 4, 3};
+byte colPins[COLS] = {9, 8, 7};
 /* ========================= INITIALISATION DU LCD/KEYPAD ================== */ 
 LiquidCrystal_I2C lcd(0x27,20,4);
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
@@ -32,7 +29,8 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 void setup() {
       //PID(RES_M, Adj_res, Value_reach,  );
      lcd.init();
-     pinMode(3, OUTPUT);
+     pinMode(10, OUTPUT);
+     digitalWrite(10, LOW);
      lcd.backlight();
      lcd.setCursor(0,0);
      lcd.print("Temp : ");
@@ -40,71 +38,95 @@ void setup() {
 
 }
  /* ==================== SAISIE TEMPERATURE DE CONSIGNE ========================== */
-void TempRead() {
- 
+int  TempRead() {
+    int temp_cons = 0;
     int i = 0;
-     while (i < 2) {
-     
-     char key= keypad.getKey();
+    while (i < 2) {
+        char key = 0;
+        key= keypad.getKey();
         if (key != NO_KEY) {
-          if (key == '#') break;
-       temp_read[i] = key;
-       i++;
+            if (key == '#')
+                break;
+            else if (key >= '0' && key <= '9') {
+              i++;
+              temp_cons = temp_cons * 10 + key - '0';
+            }
         }
-       int temp_conf 
-        //int temp_cons = (int)temp_read[0]-48*10 + (int)temp_read[1]-48;
-   lcd.setCursor(0,3);
-
-
-  }
-  Serial.println(temp_read[0]);
-  lcd.print(temp_read[0]);
+    }
+    lcd.setCursor(0,3);
+    lcd.print(temp_cons);
+    delay(1200);
+    return (temp_cons);
 }
+   /* ================= HYSTERESIS: THermostat temperature =========================== */
+  bool Thermostat(int temp_cons, int temp_dht) {    
+      int state = HIGH;
+      if (temp_dht < temp_cons - HYSTERESIS)  {
+          state = LOW;
+      }
+      digitalWrite(10, state);
+      digitalWrite(PWM_A, state);
+      digitalWrite(PWM_B, state);
+      lcd.setCursor(2, 2);
+      delay(1200);
+      return (state == LOW ? true : false);
+  }
 
 /* ============================================================================ */
+/* ======================GESTION DE L'ECRAN ======================================= */
+void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
 
-void loop() {
-
-      DHT dht(2, DHT11);
-      dht.begin();
-      t = dht.readTemperature();
-      float h = dht.readHumidity();
-      char temp_min;
-      TempRead();
-   
-     
-      
-   /* ================= HYSTERESIS: THermostat temperature =========================== */
-      if (t <= temp_cons - hysteresis)  {
-          
-          digitalWrite(3, HIGH);
-          digitalWrite(PWM_A , LOW);
-          digitalWrite(PWM_B, LOW);
-          lcd.setCursor(8, 2);
-          lcd.print("heat ON ,Fan OFF");
-      }
-      if (t >= temp_cons - hysteresis ) {
-          digitalWrite(3, LOW);
-          digitalWrite(PWM_A, HIGH);
-          digitalWrite(PWM_B, HIGH);
-          lcd.setCursor(8, 2);
-          lcd.print("Heat OFF, Fan ON");
-        
-      }
-   /* ======================GESTION DE L'ECRAN ======================================= */
-   
       lcd.clear();
       lcd.print("Temp : ");
-      lcd.print(t);
+      lcd.print(temp_dht);
       lcd.setCursor(9, 0);
-      lcd.print(" C");
+      lcd.print(" set ");
+      lcd.print(temp_cons);
       lcd.setCursor(0, 1);
       lcd.print("Humidity :  ");
       lcd.setCursor(11, 1); 
       lcd.print(h);
-      
-      //Serial.println("Temperature: ");
-      //Serial.println(t);
-      delay(10);
+      if (StateRelay == true) {
+
+          lcd.print("Heat ON ,");
+          lcd.print(" Fan OFF");
+        
+      }
+      else {
+
+          lcd.print("Heat OFF ,");
+          lcd.print(" Fan ON");
+        
+      }
+      lcd.setCursor(0,3);
+      lcd.print("\'#\' to enter menu");
+       delay(10);
+  
+}
+void Menu() {
+    int key2 = keypad.getKey();
+          if (key2 == '#') {
+            Serial.println("asdasd");
+            lcd.clear();
+            lcd.setCursor(0,0);
+            lcd.print("[1] :Temp Consigne");
+            lcd.setCursor(0,1);
+            lcd.print("[2] :Hum Consigne");
+            lcd.setCursor(0,2);
+            lcd.print("[3] :Exit ");
+                        delay(3000);
+
+          }
+}
+void loop() {
+
+      DHT dht(2, DHT11);
+      dht.begin();
+      Menu();
+      int temp_dht = dht.readTemperature();
+      float h = dht.readHumidity();
+      int temp_cons = TempRead();
+      bool StateRelay = Thermostat(temp_cons, temp_dht);
+      Display(temp_cons, temp_dht, h, StateRelay);
 
 }
