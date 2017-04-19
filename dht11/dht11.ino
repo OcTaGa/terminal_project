@@ -1,14 +1,15 @@
-//#include <PID_v1.h>
+
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
 #include <Wire.h>
 #include <Keypad.h>
-#include <mini_serre.h>
 #define HYSTERESIS  2
 
-int PWM_A = A1; // moteur ventilateur
+int PWM_A = A1; // moteur fenetre
 int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
+int temp_cons = 20;
+int hum_cons = 50;
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -20,15 +21,21 @@ char keys[ROWS][COLS]  = {
 };
 byte rowPins[ROWS] = {6, 5, 4, 3};
 byte colPins[COLS] = {9, 8, 7};
+
+/*===========================INITIALISATION CAPTEUR=======================*/
+
 DHT dht(2, DHT11);
+
 /* ========================= INITIALISATION DU LCD/KEYPAD ================== */ 
+
 LiquidCrystal_I2C lcd(0x27,20,4);
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+
 
 /* ========================= DEFINITIONS DES PINs ========================= */
 
 void setup() {
-      //PID(RES_M, Adj_res, Value_reach,  );
+
      dht.begin();
      lcd.init();
      pinMode(10, OUTPUT);
@@ -36,17 +43,41 @@ void setup() {
      lcd.backlight();
      lcd.setCursor(0,0);
      lcd.print("Temp : ");
-     Serial.begin(9600);
-     //keypad.addEventListener(Menu);
+     Serial.begin (9600);
+
 
 }
- /* ==================== SAISIE TEMPERATURE DE CONSIGNE ========================== */
-int  ValueRead() {
-    int temp_cons = 0;
+ 
+
+
+/*=============================BOUCLE PRINCIPALE=====================================*/
+
+void loop() {
+
+          key_menu = keypad.getKey();
+          delay(50);
+          Serial.println(key_menu);
+      if (key_menu == '#') { 
+              Menu();
+      }
+          int temp_dht = dht.readTemperature();
+          float h = dht.readHumidity();
+          bool StateRelay = Thermostat(temp_cons, temp_dht);
+          Display(temp_cons, temp_dht, h, StateRelay);
+
+delay (100);
+}
+
+
+/* ==================== FONCTION SAISIE TEMPERATURE DE CONSIGNE ========================== */
+ 
+int  TempRead() {
+    temp_cons = 0;
     int i = 0;
     while (i < 2) {
         char key = 0;
         key= keypad.getKey();
+        delay(10);
         if (key != NO_KEY) {
             if (key == '#')
                 break;
@@ -56,12 +87,35 @@ int  ValueRead() {
             }
         }
     }
-    lcd.setCursor(0,3);
-    lcd.print(temp_cons);
-    delay(1200);
+  lcd.clear();
     return (temp_cons);
 }
-   /* ================= HYSTERESIS: THermostat temperature =========================== */
+
+ /* ==================== FONCTION SAISIE HUMIDITE DE CONSIGNE ========================== */
+ 
+int  HumRead() {
+    hum_cons = 0;
+    int i = 0;
+    while (i < 2) {
+        char key = 0;
+        key= keypad.getKey();
+        delay(10);
+        if (key != NO_KEY) {
+            if (key == '#')
+                break;
+            else if (key >= '0' && key <= '9') {
+              i++;
+              hum_cons = hum_cons * 10 + key - '0';
+            }
+        }
+    }
+  
+  lcd.clear();
+    return (hum_cons);
+}
+
+   /* ================= FONCTION REGULATION TEMPERATURE =========================== */
+   
   bool Thermostat(int temp_cons, int temp_dht) {    
       int state = HIGH;
       if (temp_dht < temp_cons - HYSTERESIS)  {
@@ -71,86 +125,90 @@ int  ValueRead() {
       digitalWrite(PWM_A, state);
       digitalWrite(PWM_B, state);
       lcd.setCursor(2, 2);
-      delay(1200);
       return (state == LOW ? true : false);
   }
 
-/* ============================================================================ */
+
 /* ======================GESTION DE L'ECRAN ======================================= */
 void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
 
-      lcd.clear();
+      //lcd.clear();
+      lcd.setCursor(0,0);
       lcd.print("Temp : ");
       lcd.print(temp_dht);
-      lcd.setCursor(9, 0);
-      lcd.print(" set ");
+      lcd.setCursor(12, 0);
+      lcd.print("set:");
       lcd.print(temp_cons);
       lcd.setCursor(0, 1);
-      lcd.print("Humidity :  ");
-      lcd.setCursor(11, 1); 
+      lcd.print("H% :  ");
+      lcd.setCursor(5, 1); 
       lcd.print(h);
+      lcd.setCursor(0,2);
       if (StateRelay == true) {
-
-          lcd.print("Heat ON ,");
-          lcd.print(" Fan OFF");
-        
-      }
-      else {
 
           lcd.print("Heat OFF ,");
           lcd.print(" Fan ON");
         
       }
+      else {
+
+          lcd.print("Heat ON ,");
+          lcd.print(" Fan OFF ");
+        
+      }
       lcd.setCursor(0,3);
       lcd.print("\'#\' to enter menu");
-       delay(10);
-  
-}
-void Menu() {
-  
-            key_menu = keypad.getKey();
-        while (key_menu == '#' ) {
-              if (key_menu == '3' )
-                  break;
-            key_menu = keypad.getKey();
-            Serial.println(key_menu);
-            
-          //if (keypad.getState() == PRESSED && key == '#') {
-            if (key_menu == '#' ) {
-              
-            lcd.clear();
-            lcd.setCursor(0,0);
-            lcd.print("[1] :Temp Consigne");
-            lcd.setCursor(0,1);
-            lcd.print("[2] :Hum Consigne");
-            lcd.setCursor(0,2);
-            lcd.print("[3] :Exit ");
-            
-        /*    int item = ValueRead();
-            switch (item) {
-              case 1:
-                Serial.println("item 1");
-                break ;
-              case 2:
-                Serial.println("item 2");
-                break;
-              default:
-                break;
-              } */
-              delay(1000);
-          
-            }
-      }
-}
-void loop() {
-      Menu();
-      //if (keypad.keyStateChanged())
-        char c = keypad.getKey();
-      int temp_dht = dht.readTemperature();
-      float h = dht.readHumidity();
-//      int temp_cons = ValueRead();
-      int temp_cons = 0;
-      bool StateRelay = Thermostat(temp_cons, temp_dht);
-      Display(temp_cons, temp_dht, h, StateRelay);
 
+  
 }
+
+/*====================== FONCTION  GESTION DES MENUS====================================*/
+
+  void Menu() {
+                Serial.println( "menu");
+               lcd.clear();
+               lcd.setCursor(0,0);
+               lcd.print("[1] :Set Temperature");
+               lcd.setCursor(0,1);
+               lcd.print("[2] :Set RH%");
+               lcd.setCursor(0,2);
+               lcd.print("[3] :Exit ");
+               int key_menu = 0;
+               
+               while (key_menu != 51){
+          
+                int key_menu = keypad.getKey();
+                delay (100);
+                if (key_menu != NO_KEY){
+                //Serial.println(key_menu);
+        switch ( key_menu ) {
+              
+              case 49: {
+                  lcd.clear();
+                  
+                  lcd.print("Temp consigne : ");
+                  int temp_cons = TempRead();
+                  lcd.print(temp_cons);
+                  break;
+              }
+              case 50: {
+              
+                  lcd.clear();
+                  
+                  lcd.print("RH% consigne : ");
+                  int hum_cons= HumRead();
+                  lcd.print(temp_cons);
+                  break;
+              }
+
+               break;
+
+        }
+
+        break;
+        }
+       
+      }
+    }
+
+     
