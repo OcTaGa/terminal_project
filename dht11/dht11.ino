@@ -8,8 +8,8 @@
 int PWM_A = A1; // moteur fenetre
 int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
-int temp_cons = 20;
-int hum_cons = 50;
+int value_cons = 20;
+int temp_cons = 50;
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -71,8 +71,8 @@ delay (100);
 
 /* ==================== FONCTION SAISIE TEMPERATURE DE CONSIGNE ========================== */
  
-int  TempRead() {
-    temp_cons = 0;
+int  ValueRead() {
+    value_cons = 0;
     int i = 0;
     while (i < 2) {
         char key = 0;
@@ -83,17 +83,17 @@ int  TempRead() {
                 break;
             else if (key >= '0' && key <= '9') {
               i++;
-              temp_cons = temp_cons * 10 + key - '0';
+              value_cons = value_cons * 10 + key - '0';
             }
         }
     }
   lcd.clear();
-    return (temp_cons);
+    return (value_cons);
 }
 
  /* ==================== FONCTION SAISIE HUMIDITE DE CONSIGNE ========================== */
  
-int  HumRead() {
+/* int  HumRead() {
     hum_cons = 0;
     int i = 0;
     while (i < 2) {
@@ -112,7 +112,8 @@ int  HumRead() {
   
   lcd.clear();
     return (hum_cons);
-}
+}   
+    */
 
    /* ================= FONCTION REGULATION TEMPERATURE =========================== */
    
@@ -187,7 +188,7 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
                   lcd.clear();
                   
                   lcd.print("Temp consigne : ");
-                  int temp_cons = TempRead();
+                  int temp_cons = ValueRead();
                   lcd.print(temp_cons);
                   break;
               }
@@ -196,9 +197,14 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
                   lcd.clear();
                   
                   lcd.print("RH% consigne : ");
-                  int hum_cons= HumRead();
+                  int hum_cons= ValueRead();
                   lcd.print(temp_cons);
                   break;
+              }
+              case 51: {
+
+                     lcd.clear();
+                break;
               }
 
                break;
