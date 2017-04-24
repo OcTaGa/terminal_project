@@ -10,6 +10,7 @@ int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
 int value_cons = 20;
 int temp_cons = 50;
+int Hum_Value = 0;
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -62,7 +63,8 @@ void loop() {
       }
           int temp_dht = dht.readTemperature();
           float h = dht.readHumidity();
-          bool StateRelay = Thermostat(temp_cons, temp_dht);
+          bool StateRelay_1 = Thermostat(temp_cons, temp_dht);
+          bool StateRelay_2 = ThermostatHum(Hum_cons, Hum_Value );
           Display(temp_cons, temp_dht, h, StateRelay);
 
 delay (100);
@@ -91,47 +93,35 @@ int  ValueRead() {
     return (value_cons);
 }
 
- /* ==================== FONCTION SAISIE HUMIDITE DE CONSIGNE ========================== */
  
-/* int  HumRead() {
-    hum_cons = 0;
-    int i = 0;
-    while (i < 2) {
-        char key = 0;
-        key= keypad.getKey();
-        delay(10);
-        if (key != NO_KEY) {
-            if (key == '#')
-                break;
-            else if (key >= '0' && key <= '9') {
-              i++;
-              hum_cons = hum_cons * 10 + key - '0';
-            }
-        }
-    }
-  
-  lcd.clear();
-    return (hum_cons);
-}   
-    */
-
    /* ================= FONCTION REGULATION TEMPERATURE =========================== */
    
   bool Thermostat(int temp_cons, int temp_dht) {    
-      int state = HIGH;
+      int state_A = HIGH;
       if (temp_dht < temp_cons - HYSTERESIS)  {
           state = LOW;
       }
-      digitalWrite(10, state);
-      digitalWrite(PWM_A, state);
-      digitalWrite(PWM_B, state);
+      digitalWrite(10, state_A);
+      digitalWrite(PWM_A, state_A);
+      digitalWrite(PWM_B, state_A);
       lcd.setCursor(2, 2);
-      return (state == LOW ? true : false);
+      return (state_A == LOW ? true : false);
   }
 
+bool ThermostatHum(int Hum_cons, int Hum_Value) {
+  
+    int State_B = HIGH;
+    if (Hum_Value < Hum_cons - HYSTERESIS) {
+         State_B = LOW;  
+  
+    }
+      analogWrite(, State_B); // Brumisateur
+      digitalWrite(, State_B); // moteur fenêtre
+      digitalWrite(, State_B); // moteur fenêtre 
 
+}
 /* ======================GESTION DE L'ECRAN ======================================= */
-void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
+void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool Staterelay_2) {
 
       //lcd.clear();
       lcd.setCursor(0,0);
@@ -145,16 +135,16 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
       lcd.setCursor(5, 1); 
       lcd.print(h);
       lcd.setCursor(0,2);
-      if (StateRelay == true) {
+      if (StateRelay_1 == true) {
 
-          lcd.print("Heat OFF ,");
-          lcd.print(" Fan ON");
+          lcd.print("Heat OFF ,"); // remplacer ces lignes par allumage de LED ( GREEN=Allumer et RED=Eteint )
+          lcd.print(" Fan ON");    // ********
         
       }
       else {
 
-          lcd.print("Heat ON ,");
-          lcd.print(" Fan OFF ");
+          lcd.print("Heat ON ,"); //de même ici 
+          lcd.print(" Fan OFF ");  //*******
         
       }
       lcd.setCursor(0,3);
@@ -162,9 +152,9 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
 
   
 }
-/*====================== FONCTION LUMINOSITE ===========================================*/
-
-
+/*====================== FONCTION HUMREAD ===========================================*/
+Hum
+      
 
 
 
