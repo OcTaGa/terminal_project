@@ -10,7 +10,10 @@ int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
 int value_cons = 20;
 int temp_cons = 50;
+int sensorPin = A0;
 int Hum_Value = 0;
+int Hum_Ground = 0;
+
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -62,10 +65,10 @@ void loop() {
               Menu();
       }
           int temp_dht = dht.readTemperature();
-          float h = dht.readHumidity();
+          int HumValue = dht.readHumidity();
           bool StateRelay_1 = Thermostat(temp_cons, temp_dht);
           bool StateRelay_2 = ThermostatHum(Hum_cons, Hum_Value );
-          Display(temp_cons, temp_dht, h, StateRelay);
+          Display(temp_cons, temp_dht, h, StateRelay_1, StateRelay_2, Hum_cons);
 
 delay (100);
 }
@@ -99,7 +102,7 @@ int  ValueRead() {
   bool Thermostat(int temp_cons, int temp_dht) {    
       int state_A = HIGH;
       if (temp_dht < temp_cons - HYSTERESIS)  {
-          state = LOW;
+          state_A = LOW;
       }
       digitalWrite(10, state_A);
       digitalWrite(PWM_A, state_A);
@@ -118,15 +121,17 @@ bool ThermostatHum(int Hum_cons, int Hum_Value) {
       analogWrite(, State_B); // Brumisateur
       digitalWrite(, State_B); // moteur fenêtre
       digitalWrite(, State_B); // moteur fenêtre 
-
+      // Penser à mettre des LED pour check ce qui est allumer.
+    return (State_B == LOW ? true : false);
 }
 /* ======================GESTION DE L'ECRAN ======================================= */
-void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool Staterelay_2) {
+void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool Staterelay_2, int Hum_cons) {
 
       //lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Temp : ");
       lcd.print(temp_dht);
+      lcd.print('°');      // /!\ ACCEPTE LES CODE ASCII DANS CETTE ORTHOGRAPHES ?????
       lcd.setCursor(12, 0);
       lcd.print("set:");
       lcd.print(temp_cons);
@@ -149,15 +154,31 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool State
       }
       lcd.setCursor(0,3);
       lcd.print("\'#\' to enter menu");
-
-  
+      if (StateRelay_2 == true) {
+        
+             digitalWrite(12, HIGH);
+             digitalWrite(11// Allumer led verte et éteindre led Rouge
+        
+      }
+      else {
+        
+              // Eteindre Led Verte et allumer Led rouges correspondante. 
+        
+      }
 }
 /*====================== FONCTION HUMREAD ===========================================*/
-Hum
+int HumRead(int Hum_Ground, int sensorPin) {
+        
+       Hum_Ground = analogRead(sensorPin);
+       delay(1000);
+       Hum_Ground = constrain(Hum_Ground, 485, 1023);
+       Hum_Ground = map(Hum_Ground, 485, 1023, 100, 0);
+       
+             
       
 
 
-
+}
 /*====================== FONCTION  GESTION DES MENUS====================================*/
 
   void Menu() {
@@ -205,7 +226,7 @@ Hum
               }
               case 52: {
 
-                     lcd.clear();
+                  lcd.clear();
                 break;
               }
 
