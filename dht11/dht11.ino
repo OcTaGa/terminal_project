@@ -162,6 +162,11 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
 
   
 }
+/*====================== FONCTION LUMINOSITE ===========================================*/
+
+
+
+
 
 /*====================== FONCTION  GESTION DES MENUS====================================*/
 
@@ -202,6 +207,13 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay) {
                   break;
               }
               case 51: {
+                
+                  lcd.print("Luminosity :");
+                  int Lum_hours = ValueRead();
+                  lcd.print(temp_cons);
+                  break;   
+              }
+              case 52: {
 
                      lcd.clear();
                 break;
