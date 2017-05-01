@@ -8,12 +8,13 @@
 int PWM_A = A1; // moteur fenetre
 int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
-int value_cons = 20;
-int temp_cons = 50;
+int value_cons ;
+int temp_cons ;
 int sensorPin = A0;
-int Hum_Value = 0;
+int hum_dht ;
 int Hum_Ground = 0;
-
+int Hum_cons = 0;
+bool StateRelay_2 ;
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -65,10 +66,10 @@ void loop() {
               Menu();
       }
           int temp_dht = dht.readTemperature();
-          int HumValue = dht.readHumidity();
+          int hum_dht = dht.readHumidity();
           bool StateRelay_1 = Thermostat(temp_cons, temp_dht);
-          bool StateRelay_2 = ThermostatHum(Hum_cons, Hum_Value );
-          Display(temp_cons, temp_dht, h, StateRelay_1, StateRelay_2, Hum_cons);
+          bool StateRelay_2 = ThermostatHum(Hum_cons, hum_dht );
+          Display(temp_cons, temp_dht, hum_dht, StateRelay_1, StateRelay_2, Hum_cons);
 
 delay (100);
 }
@@ -111,16 +112,16 @@ int  ValueRead() {
       return (state_A == LOW ? true : false);
   }
 
-bool ThermostatHum(int Hum_cons, int Hum_Value) {
+bool ThermostatHum(int Hum_cons, int hum_dht) {
   
     int State_B = HIGH;
-    if (Hum_Value < Hum_cons - HYSTERESIS) {
+    if (hum_dht < Hum_cons - HYSTERESIS) {
          State_B = LOW;  
   
     }
-      analogWrite(, State_B); // Brumisateur
-      digitalWrite(, State_B); // moteur fenêtre
-      digitalWrite(, State_B); // moteur fenêtre 
+     // analogWrite(, State_B); // Brumisateur
+     // digitalWrite(, State_B); // moteur fenêtre
+     // digitalWrite(, State_B); // moteur fenêtre 
       // Penser à mettre des LED pour check ce qui est allumer.
     return (State_B == LOW ? true : false);
 }
@@ -131,14 +132,14 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool State
       lcd.setCursor(0,0);
       lcd.print("Temp : ");
       lcd.print(temp_dht);
-      lcd.print('°');      // /!\ ACCEPTE LES CODE ASCII DANS CETTE ORTHOGRAPHES ?????
+      lcd.print("-C");      // /!\ ACCEPTE LES CODE ASCII DANS CETTE ORTHOGRAPHES ?????
       lcd.setCursor(12, 0);
       lcd.print("set:");
       lcd.print(temp_cons);
       lcd.setCursor(0, 1);
       lcd.print("H% :  ");
       lcd.setCursor(5, 1); 
-      lcd.print(h);
+      lcd.print(hum_dht);
       lcd.setCursor(0,2);
       if (StateRelay_1 == true) {
 
@@ -152,12 +153,10 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool State
           lcd.print(" Fan OFF ");  //*******
         
       }
-      lcd.setCursor(0,3);
-      lcd.print("\'#\' to enter menu");
       if (StateRelay_2 == true) {
         
              digitalWrite(12, HIGH);
-             digitalWrite(11// Allumer led verte et éteindre led Rouge
+           //  digitalWrite(11// Allumer led verte et éteindre led Rouge
         
       }
       else {
@@ -165,6 +164,9 @@ void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool State
               // Eteindre Led Verte et allumer Led rouges correspondante. 
         
       }
+      lcd.setCursor(0,3);
+      lcd.print("\'#\' to enter menu");
+      
 }
 /*====================== FONCTION HUMREAD ===========================================*/
 int HumRead(int Hum_Ground, int sensorPin) {
@@ -189,10 +191,12 @@ int HumRead(int Hum_Ground, int sensorPin) {
                lcd.setCursor(0,1);
                lcd.print("[2] :Set RH%");
                lcd.setCursor(0,2);
-               lcd.print("[3] :Exit ");
+               lcd.print("[3] :Luminosity ");
+               lcd.setCursor(0,3);
+               lcd.print("[4] :EXIT ");
                int key_menu = 0;
                
-               while (key_menu != 51){
+               while (key_menu != 52){
           
                 int key_menu = keypad.getKey();
                 delay (100);
@@ -203,7 +207,7 @@ int HumRead(int Hum_Ground, int sensorPin) {
               case 49: {
                   lcd.clear();
                   
-                  lcd.print("Temp consigne : ");
+                  lcd.print("Temp consigne : ");    // GESTION DE LA CONSIGNE DE TEMPERATURE
                   int temp_cons = ValueRead();
                   lcd.print(temp_cons);
                   break;
@@ -212,14 +216,15 @@ int HumRead(int Hum_Ground, int sensorPin) {
               
                   lcd.clear();
                   
-                  lcd.print("RH% consigne : ");
+                  lcd.print("RH% consigne : ");     // GESTION DE LA CONSIGNE D'HUMIDITE
                   int hum_cons= ValueRead();
-                  lcd.print(temp_cons);
+                  lcd.print(Hum_cons);
                   break;
               }
               case 51: {
-                
-                  lcd.print("Luminosity :");
+
+                  lcd.clear();
+                  lcd.print("Luminosity :");          // /!\ A REGLER PLUS TARD
                   int Lum_hours = ValueRead();
                   lcd.print(temp_cons);
                   break;   
