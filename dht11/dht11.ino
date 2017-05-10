@@ -8,8 +8,8 @@
 int PWM_A = A1; // moteur fenetre
 int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
-int value_cons ;
-int temp_cons ;
+int value_cons = 0;
+int temp_cons = 0 ;
 int sensorPin = A0;
 int hum_dht ;
 int Hum_Ground = 0;
@@ -61,9 +61,8 @@ void loop() {
 
           key_menu = keypad.getKey();
           delay(50);
-          Serial.println(key_menu);
       if (key_menu == '#') { 
-              Menu();
+              Menu(temp_cons ,Hum_cons);
       }
           int temp_dht = dht.readTemperature();
           int hum_dht = dht.readHumidity();
@@ -126,7 +125,7 @@ bool ThermostatHum(int Hum_cons, int hum_dht) {
     return (State_B == LOW ? true : false);
 }
 /* ======================GESTION DE L'ECRAN ======================================= */
-void Display(int temp_cons, int temp_dht, float h, bool StateRelay_1, bool Staterelay_2, int Hum_cons) {
+void Display(int temp_cons, int temp_dht, int hum_dht, bool StateRelay_1, bool Staterelay_2, int Hum_cons) {
 
       //lcd.clear();
       lcd.setCursor(0,0);
@@ -183,7 +182,7 @@ int HumRead(int Hum_Ground, int sensorPin) {
 }
 /*====================== FONCTION  GESTION DES MENUS====================================*/
 
-  void Menu() {
+  void Menu(int temp_cons , int Hum_cons) {
                 Serial.println( "menu");
                lcd.clear();
                lcd.setCursor(0,0);
