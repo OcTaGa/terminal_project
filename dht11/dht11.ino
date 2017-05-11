@@ -8,12 +8,12 @@
 int PWM_A = A1; // moteur fenetre
 int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
-int value_cons = 0;
-int temp_cons = 0 ;
+int value_cons ;
+//int temp_cons = 0 ;
 int sensorPin = A0;
 int hum_dht ;
 int Hum_Ground = 0;
-int Hum_cons = 0;
+int Hum_cons ;
 bool StateRelay_2 ;
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
@@ -139,6 +139,9 @@ void Display(int temp_cons, int temp_dht, int hum_dht, bool StateRelay_1, bool S
       lcd.print("H% :  ");
       lcd.setCursor(5, 1); 
       lcd.print(hum_dht);
+      lcd.setCursor(12,1);
+      lcd.print("set: ");
+      lcd.print(Hum_cons);
       lcd.setCursor(0,2);
       if (StateRelay_1 == true) {
 
@@ -216,7 +219,7 @@ int HumRead(int Hum_Ground, int sensorPin) {
                   lcd.clear();
                   
                   lcd.print("RH% consigne : ");     // GESTION DE LA CONSIGNE D'HUMIDITE
-                  int hum_cons= ValueRead();
+                  int Hum_cons= ValueRead();
                   lcd.print(Hum_cons);
                   break;
               }
