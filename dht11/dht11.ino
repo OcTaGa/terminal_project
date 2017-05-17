@@ -8,12 +8,11 @@
 int PWM_A = A1; // moteur fenetre
 int PWM_B = A2; // moteur fenetre
 char key_menu = NO_KEY ;
-int value_cons ;
-//int temp_cons = 0 ;
+int temp_cons = 20;
 int sensorPin = A0;
-int hum_dht ;
+int hum_dht = 50;
 int Hum_Ground = 0;
-int Hum_cons ;
+int Hum_cons = 50;
 bool StateRelay_2 ;
   /* ================= DEFINITION DU CLAVIER ========================= */
 const byte ROWS = 4;
@@ -44,6 +43,7 @@ void setup() {
      dht.begin();
      lcd.init();
      pinMode(10, OUTPUT);
+     pinMode(11, OUTPUT);
      digitalWrite(10, LOW);
      lcd.backlight();
      lcd.setCursor(0,0);
@@ -62,14 +62,14 @@ void loop() {
           key_menu = keypad.getKey();
           delay(50);
       if (key_menu == '#') { 
-              Menu(temp_cons ,Hum_cons);
+              Menu();
       }
           int temp_dht = dht.readTemperature();
           int hum_dht = dht.readHumidity();
           bool StateRelay_1 = Thermostat(temp_cons, temp_dht);
           bool StateRelay_2 = ThermostatHum(Hum_cons, hum_dht );
           Display(temp_cons, temp_dht, hum_dht, StateRelay_1, StateRelay_2, Hum_cons);
-
+Serial.println (temp_cons);
 delay (100);
 }
 
@@ -77,22 +77,23 @@ delay (100);
 /* ==================== FONCTION SAISIE TEMPERATURE DE CONSIGNE ========================== */
  
 int  ValueRead() {
-    value_cons = 0;
+    int value_cons = 0;
     int i = 0;
     while (i < 2) {
         char key = 0;
         key= keypad.getKey();
-        delay(10);
+        delay(50);
         if (key != NO_KEY) {
             if (key == '#')
                 break;
-            else if (key >= '0' && key <= '9') {
+            else if (key >= 48 && key <= 57) {
               i++;
-              value_cons = value_cons * 10 + key - '0';
+              value_cons = value_cons * 10 + key - 48;
             }
         }
     }
-  lcd.clear();
+        lcd.clear();
+        //Serial.println(value_cons);
     return (value_cons);
 }
 
@@ -100,13 +101,21 @@ int  ValueRead() {
    /* ================= FONCTION REGULATION TEMPERATURE =========================== */
    
   bool Thermostat(int temp_cons, int temp_dht) {    
-      int state_A = HIGH;
+      bool state_A = HIGH;
+      bool state_B = HIGH;
       if (temp_dht < temp_cons - HYSTERESIS)  {
           state_A = LOW;
+          state_B = HIGH;
       }
-      digitalWrite(10, state_A);
-      digitalWrite(PWM_A, state_A);
-      digitalWrite(PWM_B, state_A);
+      else {
+          state_A = HIGH;
+          state_B = LOW;
+      }
+      digitalWrite(11, state_A);           //commande relai chauffage
+      //digitalWrite(PWM_A, state_A);      //commande moteur ouverture et fermeture
+      //digitalWrite(PWM_B, state_A);
+      digitalWrite(10, state_B);          //commande relai ventillateur
+      
       lcd.setCursor(2, 2);
       return (state_A == LOW ? true : false);
   }
@@ -118,10 +127,10 @@ bool ThermostatHum(int Hum_cons, int hum_dht) {
          State_B = LOW;  
   
     }
-     // analogWrite(, State_B); // Brumisateur
+      //analogWrite(11, State_B); // resistance chauffage
      // digitalWrite(, State_B); // moteur fenêtre
      // digitalWrite(, State_B); // moteur fenêtre 
-      // Penser à mettre des LED pour check ce qui est allumer.
+     // Penser à mettre des LED pour check ce qui est allumer.
     return (State_B == LOW ? true : false);
 }
 /* ======================GESTION DE L'ECRAN ======================================= */
@@ -133,7 +142,7 @@ void Display(int temp_cons, int temp_dht, int hum_dht, bool StateRelay_1, bool S
       lcd.print(temp_dht);
       lcd.print("-C");      // /!\ ACCEPTE LES CODE ASCII DANS CETTE ORTHOGRAPHES ?????
       lcd.setCursor(12, 0);
-      lcd.print("set:");
+      lcd.print("set: ");
       lcd.print(temp_cons);
       lcd.setCursor(0, 1);
       lcd.print("H% :  ");
@@ -145,14 +154,14 @@ void Display(int temp_cons, int temp_dht, int hum_dht, bool StateRelay_1, bool S
       lcd.setCursor(0,2);
       if (StateRelay_1 == true) {
 
-          lcd.print("Heat OFF ,"); // remplacer ces lignes par allumage de LED ( GREEN=Allumer et RED=Eteint )
-          lcd.print(" Fan ON");    // ********
+          lcd.print("Heat ON ,"); // remplacer ces lignes par allumage de LED ( GREEN=Allumer et RED=Eteint )
+          lcd.print(" Fan OFF");    // ********
         
       }
       else {
 
-          lcd.print("Heat ON ,"); //de même ici 
-          lcd.print(" Fan OFF ");  //*******
+          lcd.print("Heat OFF ,"); //de même ici 
+          lcd.print(" Fan ON ");  //*******
         
       }
       if (StateRelay_2 == true) {
@@ -185,7 +194,7 @@ int HumRead(int Hum_Ground, int sensorPin) {
 }
 /*====================== FONCTION  GESTION DES MENUS====================================*/
 
-  void Menu(int temp_cons , int Hum_cons) {
+  void Menu() {
                 Serial.println( "menu");
                lcd.clear();
                lcd.setCursor(0,0);
@@ -210,7 +219,7 @@ int HumRead(int Hum_Ground, int sensorPin) {
                   lcd.clear();
                   
                   lcd.print("Temp consigne : ");    // GESTION DE LA CONSIGNE DE TEMPERATURE
-                  int temp_cons = ValueRead();
+                  temp_cons = ValueRead();
                   lcd.print(temp_cons);
                   break;
               }
@@ -219,7 +228,7 @@ int HumRead(int Hum_Ground, int sensorPin) {
                   lcd.clear();
                   
                   lcd.print("RH% consigne : ");     // GESTION DE LA CONSIGNE D'HUMIDITE
-                  int Hum_cons= ValueRead();
+                  Hum_cons= ValueRead();
                   lcd.print(Hum_cons);
                   break;
               }
@@ -228,7 +237,7 @@ int HumRead(int Hum_Ground, int sensorPin) {
                   lcd.clear();
                   lcd.print("Luminosity :");          // /!\ A REGLER PLUS TARD
                   int Lum_hours = ValueRead();
-                  lcd.print(temp_cons);
+                  lcd.print(Lum_hours);
                   break;   
               }
               case 52: {
